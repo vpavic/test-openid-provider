@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ import com.nimbusds.oauth2.sdk.ResponseMode;
 import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
+import com.nimbusds.oauth2.sdk.TokenIntrospectionErrorResponse;
+import com.nimbusds.oauth2.sdk.TokenIntrospectionRequest;
+import com.nimbusds.oauth2.sdk.TokenIntrospectionResponse;
+import com.nimbusds.oauth2.sdk.TokenIntrospectionSuccessResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.assertions.jwt.JWTAssertionDetails;
@@ -64,11 +68,16 @@ import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.http.ServletUtils;
 import com.nimbusds.oauth2.sdk.id.Audience;
+import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.JWTID;
 import com.nimbusds.oauth2.sdk.id.Subject;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerTokenError;
+import com.nimbusds.oauth2.sdk.token.RefreshToken;
+import com.nimbusds.oauth2.sdk.token.Token;
 import com.nimbusds.openid.connect.sdk.AuthenticationErrorResponse;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
@@ -106,9 +115,15 @@ public class OpenIdProviderApplication {
 
     private final JWKSet jwkSet;
 
+    private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
+
     public OpenIdProviderApplication(OpenIdProviderProperties properties) throws IOException, ParseException {
         this.issuer = properties.getIssuer();
         this.jwkSet = JWKSet.load(properties.getJwkSet().getInputStream());
+        this.jwtProcessor = new DefaultJWTProcessor<>();
+        JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256,
+                new ImmutableJWKSet<>(this.jwkSet));
+        this.jwtProcessor.setJWSKeySelector(keySelector);
     }
 
     public static void main(String[] args) {
@@ -243,6 +258,59 @@ public class OpenIdProviderApplication {
         return new BearerAccessToken(accessToken.serialize(), lifetime.getSeconds(), scope);
     }
 
+    @PostMapping(path = "/introspect")
+    public void introspectEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+            throws IOException {
+        HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
+        TokenIntrospectionResponse tokenIntrospectionResponse;
+        try {
+            TokenIntrospectionRequest tokenIntrospectionRequest = TokenIntrospectionRequest.parse(httpRequest);
+            AccessToken clientAuthorization = tokenIntrospectionRequest.getClientAuthorization();
+            if (clientAuthorization == null) {
+                throw new GeneralException(OAuth2Error.INVALID_CLIENT);
+            }
+            Token token = tokenIntrospectionRequest.getToken();
+            if (token instanceof RefreshToken) {
+                tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
+            }
+            else {
+                try {
+                    JWTClaimsSet claimsSet = getAccessTokenClaimsSet(new BearerAccessToken(token.getValue()));
+                    tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(true)
+                            .scope(Scope.parse(claimsSet.getStringListClaim("scope")))
+                            .clientID(new ClientID(claimsSet.getStringClaim("client_id")))
+                            .tokenType(AccessTokenType.BEARER).expirationTime(claimsSet.getExpirationTime())
+                            .issueTime(claimsSet.getIssueTime()).notBeforeTime(claimsSet.getNotBeforeTime())
+                            .subject(new Subject(claimsSet.getSubject()))
+                            .audience(Audience.create(claimsSet.getAudience()))
+                            .issuer(new Issuer(claimsSet.getIssuer())).jwtID(new JWTID(claimsSet.getJWTID())).build();
+                }
+                catch (ParseException | GeneralException e) {
+                    tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
+                }
+            }
+        }
+        catch (GeneralException e) {
+            tokenIntrospectionResponse = new TokenIntrospectionErrorResponse(e.getErrorObject());
+        }
+        HTTPResponse httpResponse = tokenIntrospectionResponse.toHTTPResponse();
+        ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
+    }
+
+    private JWTClaimsSet getAccessTokenClaimsSet(AccessToken accessToken) throws GeneralException {
+        JWTClaimsSet claimsSet;
+        try {
+            claimsSet = this.jwtProcessor.process(accessToken.getValue(), null);
+        }
+        catch (ParseException | BadJOSEException | JOSEException e) {
+            throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+        }
+        if (Instant.now().isAfter(claimsSet.getExpirationTime().toInstant())) {
+            throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+        }
+        return claimsSet;
+    }
+
     @GetMapping(path = "/userinfo")
     public void userInfoEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
             throws IOException {
@@ -250,24 +318,11 @@ public class OpenIdProviderApplication {
         UserInfoResponse userInfoResponse;
         try {
             BearerAccessToken accessToken = BearerAccessToken.parse(servletRequest.getHeader("Authorization"));
-            ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
-            JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256,
-                    new ImmutableJWKSet<>(this.jwkSet));
-            jwtProcessor.setJWSKeySelector(keySelector);
-            JWTClaimsSet claimsSet;
-            try {
-                claimsSet = jwtProcessor.process(accessToken.getValue(), null);
-            }
-            catch (ParseException | BadJOSEException | JOSEException e) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
+            JWTClaimsSet claimsSet = getAccessTokenClaimsSet(accessToken);
             if (!this.issuer.getValue().equals(claimsSet.getIssuer())) {
                 throw new GeneralException(BearerTokenError.INVALID_TOKEN);
             }
             if (!claimsSet.getAudience().contains(this.issuer.getValue())) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
-            if (Instant.now().isAfter(claimsSet.getExpirationTime().toInstant())) {
                 throw new GeneralException(BearerTokenError.INVALID_TOKEN);
             }
             try {
