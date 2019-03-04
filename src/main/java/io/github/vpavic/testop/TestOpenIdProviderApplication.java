@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.vpavic.openid;
+package io.github.vpavic.testop;
 
 import java.io.IOException;
 import java.net.URI;
@@ -104,9 +104,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootApplication
-@EnableConfigurationProperties(OpenIdProviderProperties.class)
+@EnableConfigurationProperties(TestOpenIdProviderProperties.class)
 @Controller
-public class OpenIdProviderApplication {
+public class TestOpenIdProviderApplication {
 
     private static final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes = Caffeine.newBuilder()
             .maximumSize(10).expireAfterWrite(Duration.ofMinutes(5)).build();
@@ -117,7 +117,7 @@ public class OpenIdProviderApplication {
 
     private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
 
-    public OpenIdProviderApplication(OpenIdProviderProperties properties) throws IOException, ParseException {
+    public TestOpenIdProviderApplication(TestOpenIdProviderProperties properties) throws IOException, ParseException {
         this.issuer = properties.getIssuer();
         this.jwkSet = JWKSet.load(properties.getJwkSet().getInputStream());
         this.jwtProcessor = new DefaultJWTProcessor<>();
@@ -127,7 +127,7 @@ public class OpenIdProviderApplication {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(OpenIdProviderApplication.class, args);
+        SpringApplication.run(TestOpenIdProviderApplication.class, args);
     }
 
     @GetMapping(path = "/.well-known/openid-configuration")

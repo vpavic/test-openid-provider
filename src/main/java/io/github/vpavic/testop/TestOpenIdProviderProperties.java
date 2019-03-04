@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package io.vpavic.openid;
+package io.github.vpavic.testop;
 
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
-@ConfigurationProperties("op")
-public class OpenIdProviderProperties {
+@ConfigurationProperties("testop")
+public class TestOpenIdProviderProperties {
 
     private Issuer issuer = new Issuer("http://localhost:8080");
 
