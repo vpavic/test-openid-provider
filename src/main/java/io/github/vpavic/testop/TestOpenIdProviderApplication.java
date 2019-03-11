@@ -136,6 +136,7 @@ public class TestOpenIdProviderApplication {
                 Collections.singletonList(SubjectType.PUBLIC), providerUri("/jwks.json"));
         providerMetadata.setAuthorizationEndpointURI(providerUri("/authorize"));
         providerMetadata.setTokenEndpointURI(providerUri("/token"));
+        providerMetadata.setIntrospectionEndpointURI(providerUri("/introspect"));
         providerMetadata.setScopes(new Scope(OIDCScopeValue.OPENID, OIDCScopeValue.PROFILE, OIDCScopeValue.EMAIL));
         providerMetadata.setResponseTypes(Collections.singletonList(ResponseType.getDefault()));
         providerMetadata.setResponseModes(Collections.singletonList(ResponseMode.QUERY));
