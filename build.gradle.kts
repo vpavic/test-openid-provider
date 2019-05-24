@@ -2,9 +2,9 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     java
-    id("com.diffplug.gradle.spotless") version "3.22.0"
+    id("com.diffplug.gradle.spotless") version "3.23.0"
     id("com.github.ben-manes.versions") version "0.21.0"
-    id("org.springframework.boot") version "2.1.4.RELEASE"
+    id("org.springframework.boot") version "2.1.5.RELEASE"
 }
 
 java {
@@ -21,8 +21,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
 
     implementation("com.github.ben-manes.caffeine:caffeine")
-    implementation("com.nimbusds:nimbus-jose-jwt:7.1")
-    implementation("com.nimbusds:oauth2-oidc-sdk:6.8")
+    implementation("com.nimbusds:nimbus-jose-jwt:7.2.1")
+    implementation("com.nimbusds:oauth2-oidc-sdk:6.13")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
