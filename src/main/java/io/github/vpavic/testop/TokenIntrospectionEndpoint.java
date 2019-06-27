@@ -18,17 +18,14 @@ package io.github.vpavic.testop;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.time.Instant;
 import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.JWTProcessor;
 import com.nimbusds.oauth2.sdk.GeneralException;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.Scope;
@@ -47,7 +44,6 @@ import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import com.nimbusds.oauth2.sdk.token.BearerTokenError;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.oauth2.sdk.token.Token;
 import org.springframework.stereotype.Controller;
@@ -60,9 +56,9 @@ public class TokenIntrospectionEndpoint {
 
     static final String PATH = "/introspect";
 
-    private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
+    private final JWTProcessor<SecurityContext> jwtProcessor;
 
-    public TokenIntrospectionEndpoint(ConfigurableJWTProcessor<SecurityContext> jwtProcessor) {
+    public TokenIntrospectionEndpoint(JWTProcessor<SecurityContext> jwtProcessor) {
         Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
         this.jwtProcessor = jwtProcessor;
     }
@@ -85,16 +81,7 @@ public class TokenIntrospectionEndpoint {
             else {
                 try {
                     BearerAccessToken accessToken = new BearerAccessToken(token.getValue());
-                    JWTClaimsSet claimsSet;
-                    try {
-                        claimsSet = this.jwtProcessor.process(accessToken.getValue(), null);
-                    }
-                    catch (ParseException | BadJOSEException | JOSEException e) {
-                        throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-                    }
-                    if (Instant.now().isAfter(claimsSet.getExpirationTime().toInstant())) {
-                        throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-                    }
+                    JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
                     tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(true)
                             .scope(Scope.parse(claimsSet.getStringListClaim("scope")))
                             .clientID(new ClientID(claimsSet.getStringClaim("client_id")))

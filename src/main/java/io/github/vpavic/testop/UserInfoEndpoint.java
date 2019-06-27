@@ -18,17 +18,14 @@ package io.github.vpavic.testop;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.time.Instant;
 import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.JWTProcessor;
 import com.nimbusds.oauth2.sdk.GeneralException;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
@@ -55,9 +52,9 @@ public class UserInfoEndpoint {
 
     private final Issuer issuer;
 
-    private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
+    private final JWTProcessor<SecurityContext> jwtProcessor;
 
-    public UserInfoEndpoint(Issuer issuer, ConfigurableJWTProcessor<SecurityContext> jwtProcessor) {
+    public UserInfoEndpoint(Issuer issuer, JWTProcessor<SecurityContext> jwtProcessor) {
         Objects.requireNonNull(issuer, "issuer must not be null");
         Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
         this.issuer = issuer;
@@ -71,16 +68,7 @@ public class UserInfoEndpoint {
         UserInfoResponse userInfoResponse;
         try {
             BearerAccessToken accessToken = BearerAccessToken.parse(servletRequest.getHeader("Authorization"));
-            JWTClaimsSet claimsSet;
-            try {
-                claimsSet = this.jwtProcessor.process(accessToken.getValue(), null);
-            }
-            catch (ParseException | BadJOSEException | JOSEException e) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
-            if (Instant.now().isAfter(claimsSet.getExpirationTime().toInstant())) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
+            JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
             if (!this.issuer.getValue().equals(claimsSet.getIssuer())) {
                 throw new GeneralException(BearerTokenError.INVALID_TOKEN);
             }

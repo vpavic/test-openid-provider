@@ -28,7 +28,6 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -63,7 +62,7 @@ public class TestOpenIdProviderApplication {
     }
 
     @Bean
-    public ConfigurableJWTProcessor<SecurityContext> jwtProcessor(JWKSet jwkSet) {
+    public DefaultJWTProcessor<SecurityContext> jwtProcessor(JWKSet jwkSet) {
         DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
         JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256,
                 new ImmutableJWKSet<>(jwkSet));
