@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -31,7 +31,6 @@ import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.http.ServletUtils;
-import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerTokenError;
@@ -48,16 +47,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = UserInfoEndpoint.PATH)
 public class UserInfoEndpoint {
 
-    static final String PATH = "/userinfo";
+    public static final String PATH = "/userinfo";
 
-    private final Issuer issuer;
+    private final EndpointConfiguration configuration;
 
     private final JWTProcessor<SecurityContext> jwtProcessor;
 
-    public UserInfoEndpoint(Issuer issuer, JWTProcessor<SecurityContext> jwtProcessor) {
-        Objects.requireNonNull(issuer, "issuer must not be null");
+    public UserInfoEndpoint(EndpointConfiguration configuration, JWTProcessor<SecurityContext> jwtProcessor) {
+        Objects.requireNonNull(configuration, "configuration must not be null");
         Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
-        this.issuer = issuer;
+        this.configuration = configuration;
         this.jwtProcessor = jwtProcessor;
     }
 
@@ -69,10 +68,10 @@ public class UserInfoEndpoint {
         try {
             BearerAccessToken accessToken = BearerAccessToken.parse(servletRequest.getHeader("Authorization"));
             JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
-            if (!this.issuer.getValue().equals(claimsSet.getIssuer())) {
+            if (!this.configuration.getIssuer().getValue().equals(claimsSet.getIssuer())) {
                 throw new GeneralException(BearerTokenError.INVALID_TOKEN);
             }
-            if (!claimsSet.getAudience().contains(this.issuer.getValue())) {
+            if (!claimsSet.getAudience().contains(this.configuration.getIssuer().getValue())) {
                 throw new GeneralException(BearerTokenError.INVALID_TOKEN);
             }
             try {

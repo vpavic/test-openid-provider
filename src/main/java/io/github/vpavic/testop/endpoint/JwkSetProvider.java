@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.nimbusds.jose.jwk.JWKSet;
 
-@SpringBootApplication
-public class TestOpenIdProviderApplication {
+public interface JwkSetProvider {
 
-    public static void main(String[] args) {
-        SpringApplication.run(TestOpenIdProviderApplication.class, args);
-    }
+    JWKSet getJwkSet();
 
 }

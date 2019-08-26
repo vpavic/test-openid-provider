@@ -51,6 +51,12 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import io.github.vpavic.testop.endpoint.AuthorizationEndpoint;
+import io.github.vpavic.testop.endpoint.EndpointConfiguration;
+import io.github.vpavic.testop.endpoint.TokenEndpoint;
+import io.github.vpavic.testop.endpoint.TokenIntrospectionEndpoint;
+import io.github.vpavic.testop.endpoint.UserInfoEndpoint;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class TestOpenIdProviderApplicationTests {
@@ -59,7 +65,7 @@ public class TestOpenIdProviderApplicationTests {
     private int port;
 
     @Autowired
-    private TestOpenIdProviderProperties properties;
+    private EndpointConfiguration properties;
 
     private Scope scope = new Scope(OIDCScopeValue.OPENID, OIDCScopeValue.EMAIL, OIDCScopeValue.PROFILE);
 

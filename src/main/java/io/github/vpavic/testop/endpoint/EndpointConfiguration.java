@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.time.Duration;
 
-@SpringBootApplication
-public class TestOpenIdProviderApplication {
+import com.nimbusds.oauth2.sdk.id.Issuer;
 
-    public static void main(String[] args) {
-        SpringApplication.run(TestOpenIdProviderApplication.class, args);
-    }
+public interface EndpointConfiguration {
+
+    Issuer getIssuer();
+
+    Duration accessTokenLifetime();
+
+    Duration idTokenLifetime();
 
 }

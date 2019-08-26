@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
 import java.net.URI;
 import java.util.Collections;
@@ -42,15 +42,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = "/.well-known/openid-configuration")
 public class DiscoveryEndpoint {
 
-    private final String serializedProviderMetadata;
+    private final EndpointConfiguration configuration;
 
-    public DiscoveryEndpoint(Issuer issuer) {
-        Objects.requireNonNull(issuer, "issuer must not be null");
-        this.serializedProviderMetadata = buildProviderMetadata(issuer);
+    private String serializedProviderMetadata;
+
+    public DiscoveryEndpoint(EndpointConfiguration configuration) {
+        Objects.requireNonNull(configuration, "configuration must not be null");
+        this.configuration = configuration;
     }
 
     @GetMapping
     public ResponseEntity<String> discoveryEndpoint() {
+        if (this.serializedProviderMetadata == null) {
+            this.serializedProviderMetadata = buildProviderMetadata(this.configuration.getIssuer());
+        }
         return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON_UTF8)
                 .body(this.serializedProviderMetadata);
     }

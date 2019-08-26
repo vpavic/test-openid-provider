@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
 import java.text.ParseException;
 import java.time.Instant;

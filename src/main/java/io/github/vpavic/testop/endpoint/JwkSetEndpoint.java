@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
 import java.util.Objects;
 
@@ -30,17 +30,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = JwkSetEndpoint.PATH)
 public class JwkSetEndpoint {
 
-    static final String PATH = "/jwks.json";
+    public static final String PATH = "/jwks.json";
 
-    private final String serializedJwkSet;
+    private final JwkSetProvider jwkSetProvider;
 
-    public JwkSetEndpoint(JWKSet jwkSet) {
-        Objects.requireNonNull(jwkSet, "jwkSet must not be null");
-        this.serializedJwkSet = jwkSet.toString();
+    private String serializedJwkSet;
+
+    public JwkSetEndpoint(JwkSetProvider jwkSetProvider) {
+        Objects.requireNonNull(jwkSetProvider, "jwkSetProvider must not be null");
+        this.jwkSetProvider = jwkSetProvider;
     }
 
     @GetMapping
     public ResponseEntity<String> jwkSetEndpoint() {
+        if (this.serializedJwkSet == null) {
+            this.serializedJwkSet = this.jwkSetProvider.getJwkSet().toString();
+        }
         return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.parseMediaType(JWKSet.MIME_TYPE))
                 .body(this.serializedJwkSet);
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -43,7 +43,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping(path = AuthorizationEndpoint.PATH)
 public class AuthorizationEndpoint {
 
-    static final String PATH = "/authorize";
+    public static final String PATH = "/authorize";
 
     private final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes;
 

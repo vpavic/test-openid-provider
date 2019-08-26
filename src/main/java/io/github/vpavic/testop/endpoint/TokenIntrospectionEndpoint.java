@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.vpavic.testop;
+package io.github.vpavic.testop.endpoint;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -54,7 +54,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = TokenIntrospectionEndpoint.PATH)
 public class TokenIntrospectionEndpoint {
 
-    static final String PATH = "/introspect";
+    public static final String PATH = "/introspect";
 
     private final JWTProcessor<SecurityContext> jwtProcessor;
 
