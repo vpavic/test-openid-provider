@@ -2,9 +2,9 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     java
-    id("com.diffplug.gradle.spotless") version "3.24.2"
-    id("com.github.ben-manes.versions") version "0.22.0"
-    id("org.springframework.boot") version "2.1.7.RELEASE"
+    id("com.diffplug.spotless").version("5.12.1")
+    id("com.github.ben-manes.versions").version("0.38.0")
+    id("org.springframework.boot").version("2.4.5")
 }
 
 java {
@@ -17,28 +17,25 @@ repositories {
 
 dependencies {
     implementation(platform(SpringBootPlugin.BOM_COORDINATES))
-
-    implementation("org.springframework.boot:spring-boot-starter-web")
-
     implementation("com.github.ben-manes.caffeine:caffeine")
-    implementation("com.nimbusds:nimbus-jose-jwt:7.8")
-    implementation("com.nimbusds:oauth2-oidc-sdk:6.14")
+    implementation("com.nimbusds:oauth2-oidc-sdk")
+    implementation("org.springframework.boot:spring-boot-starter-web")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
-spotless {
-    val licenseHeaderFile = rootProject.file("config/spotless/license.java")
-    val importOrderFile = rootProject.file("config/eclipse/test-op.importorder")
-    val eclipseConfigFile = rootProject.file("config/eclipse/test-op-formatter.xml")
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
 
+spotless {
     java {
         trimTrailingWhitespace()
         endWithNewline()
         indentWithSpaces()
-        licenseHeaderFile(licenseHeaderFile)
-        importOrderFile(importOrderFile)
+        licenseHeaderFile(rootProject.file("config/spotless/license.java"))
+        importOrderFile(rootProject.file("config/eclipse/test-op.importorder"))
         removeUnusedImports()
-        eclipse().configFile(eclipseConfigFile)
+        eclipse().configFile(rootProject.file("config/eclipse/test-op-formatter.xml"))
     }
 }

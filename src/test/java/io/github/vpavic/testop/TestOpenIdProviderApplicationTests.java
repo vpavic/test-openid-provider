@@ -43,13 +43,11 @@ import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import io.github.vpavic.testop.endpoint.AuthorizationEndpoint;
 import io.github.vpavic.testop.endpoint.EndpointConfiguration;
@@ -57,9 +55,8 @@ import io.github.vpavic.testop.endpoint.TokenEndpoint;
 import io.github.vpavic.testop.endpoint.TokenIntrospectionEndpoint;
 import io.github.vpavic.testop.endpoint.UserInfoEndpoint;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-public class TestOpenIdProviderApplicationTests {
+class TestOpenIdProviderApplicationTests {
 
     @LocalServerPort
     private int port;
@@ -67,17 +64,17 @@ public class TestOpenIdProviderApplicationTests {
     @Autowired
     private EndpointConfiguration properties;
 
-    private Scope scope = new Scope(OIDCScopeValue.OPENID, OIDCScopeValue.EMAIL, OIDCScopeValue.PROFILE);
+    private final Scope scope = new Scope(OIDCScopeValue.OPENID, OIDCScopeValue.EMAIL, OIDCScopeValue.PROFILE);
 
-    private ClientID clientId = new ClientID("test-client");
+    private final ClientID clientId = new ClientID("test-client");
 
-    private Secret clientSecret = new Secret("secret");
+    private final Secret clientSecret = new Secret("secret");
 
-    private URI redirectUri = URI.create("http://example.com");
+    private final URI redirectUri = URI.create("http://example.com");
 
-    private State state = new State();
+    private final State state = new State();
 
-    private Subject subject = new Subject("alice");
+    private final Subject subject = new Subject("alice");
 
     @Test
     public void authorizationCodeFlow() throws Exception {
