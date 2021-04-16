@@ -18,6 +18,7 @@ package io.github.vpavic.testop.endpoint;
 
 import com.nimbusds.jose.jwk.JWKSet;
 
+@FunctionalInterface
 public interface JwkSetProvider {
 
     JWKSet getJwkSet();

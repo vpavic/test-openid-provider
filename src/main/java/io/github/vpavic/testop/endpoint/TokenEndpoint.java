@@ -32,6 +32,7 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GeneralException;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
@@ -115,7 +116,8 @@ public class TokenEndpoint {
             tokenResponse = new OIDCTokenResponse(tokens);
         }
         catch (GeneralException e) {
-            tokenResponse = new TokenErrorResponse(e.getErrorObject());
+            ErrorObject error = e.getErrorObject();
+            tokenResponse = new TokenErrorResponse((error != null) ? error : OAuth2Error.INVALID_REQUEST);
         }
         catch (JOSEException e) {
             tokenResponse = new TokenErrorResponse(OAuth2Error.SERVER_ERROR);

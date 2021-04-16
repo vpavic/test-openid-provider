@@ -56,7 +56,8 @@ public class DiscoveryEndpoint {
         if (this.serializedProviderMetadata == null) {
             this.serializedProviderMetadata = buildProviderMetadata(this.configuration.getIssuer());
         }
-        return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON_UTF8)
+        return ResponseEntity.status(HttpStatus.OK) //
+                .contentType(MediaType.APPLICATION_JSON) //
                 .body(this.serializedProviderMetadata);
     }
 

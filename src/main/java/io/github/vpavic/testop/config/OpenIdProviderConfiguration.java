@@ -16,44 +16,75 @@
 
 package io.github.vpavic.testop.config;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.KeyUse;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
+import com.nimbusds.oauth2.sdk.id.Identifier;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.github.vpavic.testop.endpoint.JwkSetProvider;
+
 @Configuration
 @EnableConfigurationProperties(OpenIdProviderProperties.class)
 public class OpenIdProviderConfiguration {
 
-    private final OpenIdProviderProperties properties;
+    private final JWKSet jwkSet;
 
-    public OpenIdProviderConfiguration(OpenIdProviderProperties properties) {
-        this.properties = properties;
+    public OpenIdProviderConfiguration() {
+        this.jwkSet = initJwkSet();
+    }
+
+    private static JWKSet initJwkSet() {
+        RSAKey rsaKey;
+        try {
+            rsaKey = new RSAKeyGenerator(2048) //
+                    .keyUse(KeyUse.SIGNATURE) //
+                    .algorithm(JWSAlgorithm.RS256) //
+                    .keyID(new Identifier().getValue()) //
+                    .generate();
+        }
+        catch (JOSEException ex) {
+            throw new RuntimeException(ex);
+        }
+        return new JWKSet(rsaKey);
+    }
+
+    @Bean
+    public JwkSetProvider jwkSetProvider() {
+        return () -> this.jwkSet;
     }
 
     @Bean
     public DefaultJWTProcessor<SecurityContext> jwtProcessor() {
         DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
         JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256,
-                new ImmutableJWKSet<>(this.properties.getJwkSet()));
+                new ImmutableJWKSet<>(this.jwkSet));
         jwtProcessor.setJWSKeySelector(keySelector);
         return jwtProcessor;
     }
 
     @Bean
     public Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes() {
-        return Caffeine.newBuilder().maximumSize(10).expireAfterWrite(Duration.ofMinutes(5)).build();
+        return Caffeine.newBuilder() //
+                .maximumSize(10_000) //
+                .expireAfterWrite(5, TimeUnit.MINUTES) //
+                .build();
     }
 
 }

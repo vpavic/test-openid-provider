@@ -32,6 +32,8 @@ public class JwkSetEndpoint {
 
     public static final String PATH = "/jwks.json";
 
+    private static final MediaType APPLICATION_JWK_SET_JSON = MediaType.parseMediaType(JWKSet.MIME_TYPE);
+
     private final JwkSetProvider jwkSetProvider;
 
     private String serializedJwkSet;
@@ -46,7 +48,8 @@ public class JwkSetEndpoint {
         if (this.serializedJwkSet == null) {
             this.serializedJwkSet = this.jwkSetProvider.getJwkSet().toString();
         }
-        return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.parseMediaType(JWKSet.MIME_TYPE))
+        return ResponseEntity.status(HttpStatus.OK) //
+                .contentType(APPLICATION_JWK_SET_JSON) //
                 .body(this.serializedJwkSet);
     }
 
