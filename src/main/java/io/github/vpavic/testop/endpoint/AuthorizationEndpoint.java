@@ -43,40 +43,40 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping(path = AuthorizationEndpoint.PATH)
 public class AuthorizationEndpoint {
 
-    public static final String PATH = "/authorize";
+	public static final String PATH = "/authorize";
 
-    private final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes;
+	private final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes;
 
-    public AuthorizationEndpoint(Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes) {
-        Objects.requireNonNull(authorizationCodes, "authorizationCodes must not be null");
-        this.authorizationCodes = authorizationCodes;
-    }
+	public AuthorizationEndpoint(Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes) {
+		Objects.requireNonNull(authorizationCodes, "authorizationCodes must not be null");
+		this.authorizationCodes = authorizationCodes;
+	}
 
-    @GetMapping
-    public void authorizationEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
-            throws IOException {
-        AuthorizationResponse authorizationResponse;
-        try {
-            AuthenticationRequest authorizationRequest = AuthenticationRequest.parse(servletRequest.getQueryString());
-            if (!authorizationRequest.getResponseType().impliesCodeFlow()) {
-                throw new GeneralException(OAuth2Error.UNSUPPORTED_RESPONSE_TYPE);
-            }
-            AuthorizationCode authorizationCode = new AuthorizationCode();
-            this.authorizationCodes.put(authorizationCode, authorizationRequest);
-            authorizationResponse = new AuthenticationSuccessResponse(authorizationRequest.getRedirectionURI(),
-                    authorizationCode, null, null, authorizationRequest.getState(), null, ResponseMode.QUERY);
-        }
-        catch (GeneralException e) {
-            if (e.getRedirectionURI() != null) {
-                authorizationResponse = new AuthenticationErrorResponse(e.getRedirectionURI(), e.getErrorObject(),
-                        e.getState(), e.getResponseMode());
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-            }
-        }
-        HTTPResponse httpResponse = authorizationResponse.toHTTPResponse();
-        ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
-    }
+	@GetMapping
+	public void authorizationEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+			throws IOException {
+		AuthorizationResponse authorizationResponse;
+		try {
+			AuthenticationRequest authorizationRequest = AuthenticationRequest.parse(servletRequest.getQueryString());
+			if (!authorizationRequest.getResponseType().impliesCodeFlow()) {
+				throw new GeneralException(OAuth2Error.UNSUPPORTED_RESPONSE_TYPE);
+			}
+			AuthorizationCode authorizationCode = new AuthorizationCode();
+			this.authorizationCodes.put(authorizationCode, authorizationRequest);
+			authorizationResponse = new AuthenticationSuccessResponse(authorizationRequest.getRedirectionURI(),
+					authorizationCode, null, null, authorizationRequest.getState(), null, ResponseMode.QUERY);
+		}
+		catch (GeneralException e) {
+			if (e.getRedirectionURI() != null) {
+				authorizationResponse = new AuthenticationErrorResponse(e.getRedirectionURI(), e.getErrorObject(),
+						e.getState(), e.getResponseMode());
+			}
+			else {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+			}
+		}
+		HTTPResponse httpResponse = authorizationResponse.toHTTPResponse();
+		ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
+	}
 
 }

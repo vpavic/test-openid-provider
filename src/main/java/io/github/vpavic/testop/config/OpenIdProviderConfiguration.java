@@ -44,47 +44,47 @@ import io.github.vpavic.testop.endpoint.JwkSetProvider;
 @EnableConfigurationProperties(OpenIdProviderProperties.class)
 public class OpenIdProviderConfiguration {
 
-    private final JWKSet jwkSet;
+	private final JWKSet jwkSet;
 
-    public OpenIdProviderConfiguration() {
-        this.jwkSet = initJwkSet();
-    }
+	public OpenIdProviderConfiguration() {
+		this.jwkSet = initJwkSet();
+	}
 
-    private static JWKSet initJwkSet() {
-        RSAKey rsaKey;
-        try {
-            rsaKey = new RSAKeyGenerator(2048) //
-                    .keyUse(KeyUse.SIGNATURE) //
-                    .algorithm(JWSAlgorithm.RS256) //
-                    .keyID(new Identifier().getValue()) //
-                    .generate();
-        }
-        catch (JOSEException ex) {
-            throw new RuntimeException(ex);
-        }
-        return new JWKSet(rsaKey);
-    }
+	private static JWKSet initJwkSet() {
+		RSAKey rsaKey;
+		try {
+			rsaKey = new RSAKeyGenerator(2048) //
+					.keyUse(KeyUse.SIGNATURE) //
+					.algorithm(JWSAlgorithm.RS256) //
+					.keyID(new Identifier().getValue()) //
+					.generate();
+		}
+		catch (JOSEException ex) {
+			throw new RuntimeException(ex);
+		}
+		return new JWKSet(rsaKey);
+	}
 
-    @Bean
-    public JwkSetProvider jwkSetProvider() {
-        return () -> this.jwkSet;
-    }
+	@Bean
+	public JwkSetProvider jwkSetProvider() {
+		return () -> this.jwkSet;
+	}
 
-    @Bean
-    public DefaultJWTProcessor<SecurityContext> jwtProcessor() {
-        DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
-        JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256,
-                new ImmutableJWKSet<>(this.jwkSet));
-        jwtProcessor.setJWSKeySelector(keySelector);
-        return jwtProcessor;
-    }
+	@Bean
+	public DefaultJWTProcessor<SecurityContext> jwtProcessor() {
+		DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+		JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256,
+				new ImmutableJWKSet<>(this.jwkSet));
+		jwtProcessor.setJWSKeySelector(keySelector);
+		return jwtProcessor;
+	}
 
-    @Bean
-    public Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes() {
-        return Caffeine.newBuilder() //
-                .maximumSize(10_000) //
-                .expireAfterWrite(5, TimeUnit.MINUTES) //
-                .build();
-    }
+	@Bean
+	public Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes() {
+		return Caffeine.newBuilder() //
+				.maximumSize(10_000) //
+				.expireAfterWrite(5, TimeUnit.MINUTES) //
+				.build();
+	}
 
 }

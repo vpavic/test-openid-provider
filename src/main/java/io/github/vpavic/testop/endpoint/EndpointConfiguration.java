@@ -22,10 +22,10 @@ import com.nimbusds.oauth2.sdk.id.Issuer;
 
 public interface EndpointConfiguration {
 
-    Issuer getIssuer();
+	Issuer getIssuer();
 
-    Duration accessTokenLifetime();
+	Duration accessTokenLifetime();
 
-    Duration idTokenLifetime();
+	Duration idTokenLifetime();
 
 }

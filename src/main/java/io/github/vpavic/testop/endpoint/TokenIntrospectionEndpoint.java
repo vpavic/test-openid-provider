@@ -54,53 +54,53 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = TokenIntrospectionEndpoint.PATH)
 public class TokenIntrospectionEndpoint {
 
-    public static final String PATH = "/introspect";
+	public static final String PATH = "/introspect";
 
-    private final JWTProcessor<SecurityContext> jwtProcessor;
+	private final JWTProcessor<SecurityContext> jwtProcessor;
 
-    public TokenIntrospectionEndpoint(JWTProcessor<SecurityContext> jwtProcessor) {
-        Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
-        this.jwtProcessor = jwtProcessor;
-    }
+	public TokenIntrospectionEndpoint(JWTProcessor<SecurityContext> jwtProcessor) {
+		Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
+		this.jwtProcessor = jwtProcessor;
+	}
 
-    @PostMapping
-    public void introspectEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
-            throws IOException {
-        HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
-        TokenIntrospectionResponse tokenIntrospectionResponse;
-        try {
-            TokenIntrospectionRequest tokenIntrospectionRequest = TokenIntrospectionRequest.parse(httpRequest);
-            AccessToken clientAuthorization = tokenIntrospectionRequest.getClientAuthorization();
-            if (clientAuthorization == null) {
-                throw new GeneralException(OAuth2Error.INVALID_CLIENT);
-            }
-            Token token = tokenIntrospectionRequest.getToken();
-            if (token instanceof RefreshToken) {
-                tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
-            }
-            else {
-                try {
-                    BearerAccessToken accessToken = new BearerAccessToken(token.getValue());
-                    JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
-                    tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(true)
-                            .scope(Scope.parse(claimsSet.getStringListClaim("scope")))
-                            .clientID(new ClientID(claimsSet.getStringClaim("client_id")))
-                            .tokenType(AccessTokenType.BEARER).expirationTime(claimsSet.getExpirationTime())
-                            .issueTime(claimsSet.getIssueTime()).notBeforeTime(claimsSet.getNotBeforeTime())
-                            .subject(new Subject(claimsSet.getSubject()))
-                            .audience(Audience.create(claimsSet.getAudience()))
-                            .issuer(new Issuer(claimsSet.getIssuer())).jwtID(new JWTID(claimsSet.getJWTID())).build();
-                }
-                catch (ParseException | GeneralException e) {
-                    tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
-                }
-            }
-        }
-        catch (GeneralException e) {
-            tokenIntrospectionResponse = new TokenIntrospectionErrorResponse(e.getErrorObject());
-        }
-        HTTPResponse httpResponse = tokenIntrospectionResponse.toHTTPResponse();
-        ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
-    }
+	@PostMapping
+	public void introspectEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+			throws IOException {
+		HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
+		TokenIntrospectionResponse tokenIntrospectionResponse;
+		try {
+			TokenIntrospectionRequest tokenIntrospectionRequest = TokenIntrospectionRequest.parse(httpRequest);
+			AccessToken clientAuthorization = tokenIntrospectionRequest.getClientAuthorization();
+			if (clientAuthorization == null) {
+				throw new GeneralException(OAuth2Error.INVALID_CLIENT);
+			}
+			Token token = tokenIntrospectionRequest.getToken();
+			if (token instanceof RefreshToken) {
+				tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
+			}
+			else {
+				try {
+					BearerAccessToken accessToken = new BearerAccessToken(token.getValue());
+					JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
+					tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(true)
+							.scope(Scope.parse(claimsSet.getStringListClaim("scope")))
+							.clientID(new ClientID(claimsSet.getStringClaim("client_id")))
+							.tokenType(AccessTokenType.BEARER).expirationTime(claimsSet.getExpirationTime())
+							.issueTime(claimsSet.getIssueTime()).notBeforeTime(claimsSet.getNotBeforeTime())
+							.subject(new Subject(claimsSet.getSubject()))
+							.audience(Audience.create(claimsSet.getAudience()))
+							.issuer(new Issuer(claimsSet.getIssuer())).jwtID(new JWTID(claimsSet.getJWTID())).build();
+				}
+				catch (ParseException | GeneralException e) {
+					tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
+				}
+			}
+		}
+		catch (GeneralException e) {
+			tokenIntrospectionResponse = new TokenIntrospectionErrorResponse(e.getErrorObject());
+		}
+		HTTPResponse httpResponse = tokenIntrospectionResponse.toHTTPResponse();
+		ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
+	}
 
 }

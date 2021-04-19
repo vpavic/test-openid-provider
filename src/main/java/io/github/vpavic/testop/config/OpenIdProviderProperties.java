@@ -26,37 +26,37 @@ import io.github.vpavic.testop.endpoint.EndpointConfiguration;
 @ConfigurationProperties("op")
 public class OpenIdProviderProperties implements EndpointConfiguration {
 
-    private Issuer issuer = new Issuer("http://localhost:8080");
+	private Issuer issuer = new Issuer("http://localhost:8080");
 
-    private Duration accessTokenLifetime = Duration.ofMinutes(10);
+	private Duration accessTokenLifetime = Duration.ofMinutes(10);
 
-    private Duration idTokenLifetime = Duration.ofMinutes(10);
+	private Duration idTokenLifetime = Duration.ofMinutes(10);
 
-    @Override
-    public Issuer getIssuer() {
-        return this.issuer;
-    }
+	@Override
+	public Issuer getIssuer() {
+		return this.issuer;
+	}
 
-    public void setIssuer(Issuer issuer) {
-        this.issuer = issuer;
-    }
+	public void setIssuer(Issuer issuer) {
+		this.issuer = issuer;
+	}
 
-    @Override
-    public Duration accessTokenLifetime() {
-        return this.accessTokenLifetime;
-    }
+	@Override
+	public Duration accessTokenLifetime() {
+		return this.accessTokenLifetime;
+	}
 
-    public void setAccessTokenLifetime(Duration accessTokenLifetime) {
-        this.accessTokenLifetime = accessTokenLifetime;
-    }
+	public void setAccessTokenLifetime(Duration accessTokenLifetime) {
+		this.accessTokenLifetime = accessTokenLifetime;
+	}
 
-    @Override
-    public Duration idTokenLifetime() {
-        return this.idTokenLifetime;
-    }
+	@Override
+	public Duration idTokenLifetime() {
+		return this.idTokenLifetime;
+	}
 
-    public void setIdTokenLifetime(Duration idTokenLifetime) {
-        this.idTokenLifetime = idTokenLifetime;
-    }
+	public void setIdTokenLifetime(Duration idTokenLifetime) {
+		this.idTokenLifetime = idTokenLifetime;
+	}
 
 }

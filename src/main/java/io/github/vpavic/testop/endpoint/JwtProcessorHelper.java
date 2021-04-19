@@ -29,21 +29,21 @@ import com.nimbusds.oauth2.sdk.token.BearerTokenError;
 
 final class JwtProcessorHelper {
 
-    private JwtProcessorHelper() {
-    }
+	private JwtProcessorHelper() {
+	}
 
-    static JWTClaimsSet process(String jwtString, JWTProcessor<SecurityContext> jwtProcessor) throws GeneralException {
-        JWTClaimsSet claimsSet;
-        try {
-            claimsSet = jwtProcessor.process(jwtString, null);
-        }
-        catch (ParseException | BadJOSEException | JOSEException e) {
-            throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-        }
-        if (Instant.now().isAfter(claimsSet.getExpirationTime().toInstant())) {
-            throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-        }
-        return claimsSet;
-    }
+	static JWTClaimsSet process(String jwtString, JWTProcessor<SecurityContext> jwtProcessor) throws GeneralException {
+		JWTClaimsSet claimsSet;
+		try {
+			claimsSet = jwtProcessor.process(jwtString, null);
+		}
+		catch (ParseException | BadJOSEException | JOSEException e) {
+			throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+		}
+		if (Instant.now().isAfter(claimsSet.getExpirationTime().toInstant())) {
+			throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+		}
+		return claimsSet;
+	}
 
 }

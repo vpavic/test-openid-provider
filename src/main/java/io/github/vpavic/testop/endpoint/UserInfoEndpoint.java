@@ -47,56 +47,56 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = UserInfoEndpoint.PATH)
 public class UserInfoEndpoint {
 
-    public static final String PATH = "/userinfo";
+	public static final String PATH = "/userinfo";
 
-    private final EndpointConfiguration configuration;
+	private final EndpointConfiguration configuration;
 
-    private final JWTProcessor<SecurityContext> jwtProcessor;
+	private final JWTProcessor<SecurityContext> jwtProcessor;
 
-    public UserInfoEndpoint(EndpointConfiguration configuration, JWTProcessor<SecurityContext> jwtProcessor) {
-        Objects.requireNonNull(configuration, "configuration must not be null");
-        Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
-        this.configuration = configuration;
-        this.jwtProcessor = jwtProcessor;
-    }
+	public UserInfoEndpoint(EndpointConfiguration configuration, JWTProcessor<SecurityContext> jwtProcessor) {
+		Objects.requireNonNull(configuration, "configuration must not be null");
+		Objects.requireNonNull(jwtProcessor, "jwtProcessor must not be null");
+		this.configuration = configuration;
+		this.jwtProcessor = jwtProcessor;
+	}
 
-    @GetMapping
-    public void userInfoEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
-            throws IOException {
-        HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
-        UserInfoResponse userInfoResponse;
-        try {
-            BearerAccessToken accessToken = BearerAccessToken.parse(servletRequest.getHeader("Authorization"));
-            JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
-            if (!this.configuration.getIssuer().getValue().equals(claimsSet.getIssuer())) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
-            if (!claimsSet.getAudience().contains(this.configuration.getIssuer().getValue())) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
-            try {
-                Scope scope = Scope.parse(claimsSet.getStringListClaim("scope"));
-                Subject subject = new Subject(claimsSet.getSubject());
-                UserInfo userInfo = new UserInfo(subject);
-                if (scope.contains(OIDCScopeValue.PROFILE)) {
-                    userInfo.setName("Alice");
-                }
-                if (scope.contains(OIDCScopeValue.EMAIL)) {
-                    userInfo.setEmailAddress("alice@example.com");
-                }
-                userInfoResponse = new UserInfoSuccessResponse(userInfo);
-            }
-            catch (ParseException e) {
-                throw new GeneralException(BearerTokenError.INVALID_TOKEN);
-            }
-        }
-        catch (GeneralException e) {
-            userInfoResponse = new UserInfoErrorResponse(e.getErrorObject());
-        }
-        HTTPResponse httpResponse = userInfoResponse.toHTTPResponse();
-        httpRequest.setHeader("Access-Control-Allow-Origin", "*");
-        httpRequest.setHeader("Access-Control-Allow-Methods", "GET");
-        ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
-    }
+	@GetMapping
+	public void userInfoEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+			throws IOException {
+		HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
+		UserInfoResponse userInfoResponse;
+		try {
+			BearerAccessToken accessToken = BearerAccessToken.parse(servletRequest.getHeader("Authorization"));
+			JWTClaimsSet claimsSet = JwtProcessorHelper.process(accessToken.getValue(), this.jwtProcessor);
+			if (!this.configuration.getIssuer().getValue().equals(claimsSet.getIssuer())) {
+				throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+			}
+			if (!claimsSet.getAudience().contains(this.configuration.getIssuer().getValue())) {
+				throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+			}
+			try {
+				Scope scope = Scope.parse(claimsSet.getStringListClaim("scope"));
+				Subject subject = new Subject(claimsSet.getSubject());
+				UserInfo userInfo = new UserInfo(subject);
+				if (scope.contains(OIDCScopeValue.PROFILE)) {
+					userInfo.setName("Alice");
+				}
+				if (scope.contains(OIDCScopeValue.EMAIL)) {
+					userInfo.setEmailAddress("alice@example.com");
+				}
+				userInfoResponse = new UserInfoSuccessResponse(userInfo);
+			}
+			catch (ParseException e) {
+				throw new GeneralException(BearerTokenError.INVALID_TOKEN);
+			}
+		}
+		catch (GeneralException e) {
+			userInfoResponse = new UserInfoErrorResponse(e.getErrorObject());
+		}
+		HTTPResponse httpResponse = userInfoResponse.toHTTPResponse();
+		httpRequest.setHeader("Access-Control-Allow-Origin", "*");
+		httpRequest.setHeader("Access-Control-Allow-Methods", "GET");
+		ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
+	}
 
 }

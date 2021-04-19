@@ -21,6 +21,6 @@ import com.nimbusds.jose.jwk.JWKSet;
 @FunctionalInterface
 public interface JwkSetProvider {
 
-    JWKSet getJwkSet();
+	JWKSet getJwkSet();
 
 }

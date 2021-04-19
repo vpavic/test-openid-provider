@@ -64,96 +64,96 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(path = TokenEndpoint.PATH)
 public class TokenEndpoint {
 
-    public static final String PATH = "/token";
+	public static final String PATH = "/token";
 
-    private final EndpointConfiguration configuration;
+	private final EndpointConfiguration configuration;
 
-    private final JwkSetProvider jwkSetProvider;
+	private final JwkSetProvider jwkSetProvider;
 
-    private final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes;
+	private final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes;
 
-    public TokenEndpoint(EndpointConfiguration configuration, JwkSetProvider jwkSetProvider,
-            Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes) {
-        Objects.requireNonNull(configuration, "configuration must not be null");
-        Objects.requireNonNull(jwkSetProvider, "jwkSetProvider must not be null");
-        Objects.requireNonNull(authorizationCodes, "authorizationCodes must not be null");
-        this.configuration = configuration;
-        this.jwkSetProvider = jwkSetProvider;
-        this.authorizationCodes = authorizationCodes;
-    }
+	public TokenEndpoint(EndpointConfiguration configuration, JwkSetProvider jwkSetProvider,
+			Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes) {
+		Objects.requireNonNull(configuration, "configuration must not be null");
+		Objects.requireNonNull(jwkSetProvider, "jwkSetProvider must not be null");
+		Objects.requireNonNull(authorizationCodes, "authorizationCodes must not be null");
+		this.configuration = configuration;
+		this.jwkSetProvider = jwkSetProvider;
+		this.authorizationCodes = authorizationCodes;
+	}
 
-    @PostMapping
-    public void tokenEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
-            throws IOException {
-        HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
-        TokenResponse tokenResponse;
-        try {
-            TokenRequest tokenRequest = TokenRequest.parse(httpRequest);
-            AuthorizationGrant authorizationGrant = tokenRequest.getAuthorizationGrant();
-            if (!GrantType.AUTHORIZATION_CODE.equals(authorizationGrant.getType())) {
-                throw new GeneralException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
-            }
-            AuthorizationCodeGrant authorizationCodeGrant = (AuthorizationCodeGrant) authorizationGrant;
-            AuthorizationCode authorizationCode = authorizationCodeGrant.getAuthorizationCode();
-            AuthenticationRequest authenticationRequest = this.authorizationCodes.getIfPresent(authorizationCode);
-            if (authenticationRequest != null) {
-                this.authorizationCodes.invalidate(authorizationCode);
-            }
-            ClientAuthentication clientAuthentication = tokenRequest.getClientAuthentication();
-            if ((clientAuthentication == null)
-                    || !ClientAuthenticationMethod.CLIENT_SECRET_BASIC.equals(clientAuthentication.getMethod())) {
-                throw new GeneralException(OAuth2Error.INVALID_CLIENT);
-            }
-            if ((authenticationRequest == null)
-                    || !authenticationRequest.getClientID().equals(clientAuthentication.getClientID())
-                    || !authenticationRequest.getRedirectionURI().equals(authorizationCodeGrant.getRedirectionURI())) {
-                throw new GeneralException(OAuth2Error.INVALID_GRANT);
-            }
-            Subject subject = new Subject("alice");
-            SignedJWT idToken = createIdToken(authenticationRequest, subject);
-            BearerAccessToken accessToken = createAccessToken(authenticationRequest, subject);
-            OIDCTokens tokens = new OIDCTokens(idToken, accessToken, null);
-            tokenResponse = new OIDCTokenResponse(tokens);
-        }
-        catch (GeneralException e) {
-            ErrorObject error = e.getErrorObject();
-            tokenResponse = new TokenErrorResponse((error != null) ? error : OAuth2Error.INVALID_REQUEST);
-        }
-        catch (JOSEException e) {
-            tokenResponse = new TokenErrorResponse(OAuth2Error.SERVER_ERROR);
-        }
-        HTTPResponse httpResponse = tokenResponse.toHTTPResponse();
-        ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
-    }
+	@PostMapping
+	public void tokenEndpoint(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+			throws IOException {
+		HTTPRequest httpRequest = ServletUtils.createHTTPRequest(servletRequest);
+		TokenResponse tokenResponse;
+		try {
+			TokenRequest tokenRequest = TokenRequest.parse(httpRequest);
+			AuthorizationGrant authorizationGrant = tokenRequest.getAuthorizationGrant();
+			if (!GrantType.AUTHORIZATION_CODE.equals(authorizationGrant.getType())) {
+				throw new GeneralException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
+			}
+			AuthorizationCodeGrant authorizationCodeGrant = (AuthorizationCodeGrant) authorizationGrant;
+			AuthorizationCode authorizationCode = authorizationCodeGrant.getAuthorizationCode();
+			AuthenticationRequest authenticationRequest = this.authorizationCodes.getIfPresent(authorizationCode);
+			if (authenticationRequest != null) {
+				this.authorizationCodes.invalidate(authorizationCode);
+			}
+			ClientAuthentication clientAuthentication = tokenRequest.getClientAuthentication();
+			if ((clientAuthentication == null)
+					|| !ClientAuthenticationMethod.CLIENT_SECRET_BASIC.equals(clientAuthentication.getMethod())) {
+				throw new GeneralException(OAuth2Error.INVALID_CLIENT);
+			}
+			if ((authenticationRequest == null)
+					|| !authenticationRequest.getClientID().equals(clientAuthentication.getClientID())
+					|| !authenticationRequest.getRedirectionURI().equals(authorizationCodeGrant.getRedirectionURI())) {
+				throw new GeneralException(OAuth2Error.INVALID_GRANT);
+			}
+			Subject subject = new Subject("alice");
+			SignedJWT idToken = createIdToken(authenticationRequest, subject);
+			BearerAccessToken accessToken = createAccessToken(authenticationRequest, subject);
+			OIDCTokens tokens = new OIDCTokens(idToken, accessToken, null);
+			tokenResponse = new OIDCTokenResponse(tokens);
+		}
+		catch (GeneralException e) {
+			ErrorObject error = e.getErrorObject();
+			tokenResponse = new TokenErrorResponse((error != null) ? error : OAuth2Error.INVALID_REQUEST);
+		}
+		catch (JOSEException e) {
+			tokenResponse = new TokenErrorResponse(OAuth2Error.SERVER_ERROR);
+		}
+		HTTPResponse httpResponse = tokenResponse.toHTTPResponse();
+		ServletUtils.applyHTTPResponse(httpResponse, servletResponse);
+	}
 
-    private SignedJWT createIdToken(AuthenticationRequest authenticationRequest, Subject subject)
-            throws JOSEException, GeneralException {
-        Instant now = Instant.now();
-        IDTokenClaimsSet idTokenClaimsSet = new IDTokenClaimsSet(this.configuration.getIssuer(), subject,
-                Audience.create(authenticationRequest.getClientID().getValue()),
-                Date.from(now.plus(this.configuration.idTokenLifetime())), Date.from(now));
-        JWTAssertionDetails details = JWTAssertionDetails.parse(idTokenClaimsSet.toJWTClaimsSet());
-        RSAKey rsaKey = (RSAKey) this.jwkSetProvider.getJwkSet().getKeys().get(0);
-        return JWTAssertionFactory.create(details, JWSAlgorithm.RS256, rsaKey.toRSAPrivateKey(), rsaKey.getKeyID(),
-                null);
-    }
+	private SignedJWT createIdToken(AuthenticationRequest authenticationRequest, Subject subject)
+			throws JOSEException, GeneralException {
+		Instant now = Instant.now();
+		IDTokenClaimsSet idTokenClaimsSet = new IDTokenClaimsSet(this.configuration.getIssuer(), subject,
+				Audience.create(authenticationRequest.getClientID().getValue()),
+				Date.from(now.plus(this.configuration.idTokenLifetime())), Date.from(now));
+		JWTAssertionDetails details = JWTAssertionDetails.parse(idTokenClaimsSet.toJWTClaimsSet());
+		RSAKey rsaKey = (RSAKey) this.jwkSetProvider.getJwkSet().getKeys().get(0);
+		return JWTAssertionFactory.create(details, JWSAlgorithm.RS256, rsaKey.toRSAPrivateKey(), rsaKey.getKeyID(),
+				null);
+	}
 
-    private BearerAccessToken createAccessToken(AuthenticationRequest authenticationRequest, Subject subject)
-            throws JOSEException {
-        Instant now = Instant.now();
-        Scope scope = authenticationRequest.getScope();
-        UserInfo userInfo = new UserInfo(subject);
-        userInfo.setClaim("scope", scope);
-        userInfo.setClaim("client_id", authenticationRequest.getClientID());
-        JWTAssertionDetails details = new JWTAssertionDetails(this.configuration.getIssuer(), subject,
-                Audience.create(this.configuration.getIssuer().getValue()),
-                Date.from(now.plus(this.configuration.accessTokenLifetime())), Date.from(now), Date.from(now),
-                new JWTID(), userInfo.toJSONObject());
-        RSAKey rsaKey = (RSAKey) this.jwkSetProvider.getJwkSet().getKeys().get(0);
-        SignedJWT accessToken = JWTAssertionFactory.create(details, JWSAlgorithm.RS256, rsaKey.toRSAPrivateKey(),
-                rsaKey.getKeyID(), null);
-        return new BearerAccessToken(accessToken.serialize(), this.configuration.accessTokenLifetime().getSeconds(),
-                scope);
-    }
+	private BearerAccessToken createAccessToken(AuthenticationRequest authenticationRequest, Subject subject)
+			throws JOSEException {
+		Instant now = Instant.now();
+		Scope scope = authenticationRequest.getScope();
+		UserInfo userInfo = new UserInfo(subject);
+		userInfo.setClaim("scope", scope);
+		userInfo.setClaim("client_id", authenticationRequest.getClientID());
+		JWTAssertionDetails details = new JWTAssertionDetails(this.configuration.getIssuer(), subject,
+				Audience.create(this.configuration.getIssuer().getValue()),
+				Date.from(now.plus(this.configuration.accessTokenLifetime())), Date.from(now), Date.from(now),
+				new JWTID(), userInfo.toJSONObject());
+		RSAKey rsaKey = (RSAKey) this.jwkSetProvider.getJwkSet().getKeys().get(0);
+		SignedJWT accessToken = JWTAssertionFactory.create(details, JWSAlgorithm.RS256, rsaKey.toRSAPrivateKey(),
+				rsaKey.getKeyID(), null);
+		return new BearerAccessToken(accessToken.serialize(), this.configuration.accessTokenLifetime().getSeconds(),
+				scope);
+	}
 
 }

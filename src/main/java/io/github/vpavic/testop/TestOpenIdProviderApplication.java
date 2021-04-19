@@ -22,8 +22,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class TestOpenIdProviderApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(TestOpenIdProviderApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(TestOpenIdProviderApplication.class, args);
+	}
 
 }
