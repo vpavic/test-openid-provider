@@ -4,7 +4,7 @@ plugins {
 	java
 	id("com.diffplug.spotless").version("5.12.1")
 	id("com.github.ben-manes.versions").version("0.38.0")
-	id("org.springframework.boot").version("2.4.5")
+	id("org.springframework.boot").version("2.5.2")
 }
 
 java {
