@@ -20,7 +20,12 @@ repositories {
 dependencies {
 	implementation(platform(SpringBootPlugin.BOM_COORDINATES))
 	implementation("com.github.ben-manes.caffeine:caffeine")
-	implementation("com.nimbusds:oauth2-oidc-sdk")
+	implementation("com.nimbusds:nimbus-jose-jwt") {
+		version { strictly("8.22.1") }
+	}
+	implementation("com.nimbusds:oauth2-oidc-sdk") {
+		version { strictly("8.36.2") }
+	}
 	implementation("org.springframework.boot:spring-boot-starter-web")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
