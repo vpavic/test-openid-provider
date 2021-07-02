@@ -91,7 +91,7 @@ public class TokenIntrospectionEndpoint {
 							.audience(Audience.create(claimsSet.getAudience()))
 							.issuer(new Issuer(claimsSet.getIssuer())).jwtID(new JWTID(claimsSet.getJWTID())).build();
 				}
-				catch (ParseException | GeneralException e) {
+				catch (IllegalArgumentException | ParseException | GeneralException e) {
 					tokenIntrospectionResponse = new TokenIntrospectionSuccessResponse.Builder(false).build();
 				}
 			}
