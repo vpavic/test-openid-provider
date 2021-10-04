@@ -17,6 +17,7 @@
 package io.github.vpavic.testop.endpoint;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import org.springframework.http.HttpStatus;
@@ -34,23 +35,18 @@ public class JwkSetEndpoint {
 
 	private static final MediaType APPLICATION_JWK_SET_JSON = MediaType.parseMediaType(JWKSet.MIME_TYPE);
 
-	private final JwkSetProvider jwkSetProvider;
+	private final Supplier<JWKSet> jwkSetSupplier;
 
-	private String serializedJwkSet;
-
-	public JwkSetEndpoint(JwkSetProvider jwkSetProvider) {
-		Objects.requireNonNull(jwkSetProvider, "jwkSetProvider must not be null");
-		this.jwkSetProvider = jwkSetProvider;
+	public JwkSetEndpoint(Supplier<JWKSet> jwkSetSupplier) {
+		Objects.requireNonNull(jwkSetSupplier, "jwkSetSupplier must not be null");
+		this.jwkSetSupplier = jwkSetSupplier;
 	}
 
 	@GetMapping
 	public ResponseEntity<String> jwkSetEndpoint() {
-		if (this.serializedJwkSet == null) {
-			this.serializedJwkSet = this.jwkSetProvider.getJwkSet().toString();
-		}
 		return ResponseEntity.status(HttpStatus.OK) //
 				.contentType(APPLICATION_JWK_SET_JSON) //
-				.body(this.serializedJwkSet);
+				.body(this.jwkSetSupplier.get().toString());
 	}
 
 }

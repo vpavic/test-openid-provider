@@ -17,6 +17,7 @@
 package io.github.vpavic.testop.config;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -38,17 +39,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import io.github.vpavic.testop.endpoint.JwkSetProvider;
-
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(OpenIdProviderProperties.class)
 public class OpenIdProviderConfiguration {
 
-	private final JWKSet jwkSet;
-
-	public OpenIdProviderConfiguration() {
-		this.jwkSet = initJwkSet();
-	}
+	private final JWKSet jwkSet = initJwkSet();
 
 	private static JWKSet initJwkSet() {
 		RSAKey rsaKey;
@@ -66,7 +61,7 @@ public class OpenIdProviderConfiguration {
 	}
 
 	@Bean
-	public JwkSetProvider jwkSetProvider() {
+	public Supplier<JWKSet> jwkSetSupplier() {
 		return () -> this.jwkSet;
 	}
 

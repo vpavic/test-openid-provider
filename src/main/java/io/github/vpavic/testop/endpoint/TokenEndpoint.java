@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -68,17 +70,17 @@ public class TokenEndpoint {
 
 	private final EndpointConfiguration configuration;
 
-	private final JwkSetProvider jwkSetProvider;
+	private final Supplier<JWKSet> jwkSetSupplier;
 
 	private final Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes;
 
-	public TokenEndpoint(EndpointConfiguration configuration, JwkSetProvider jwkSetProvider,
+	public TokenEndpoint(EndpointConfiguration configuration, Supplier<JWKSet> jwkSetSupplier,
 			Cache<AuthorizationCode, AuthenticationRequest> authorizationCodes) {
 		Objects.requireNonNull(configuration, "configuration must not be null");
-		Objects.requireNonNull(jwkSetProvider, "jwkSetProvider must not be null");
+		Objects.requireNonNull(jwkSetSupplier, "jwkSetSupplier must not be null");
 		Objects.requireNonNull(authorizationCodes, "authorizationCodes must not be null");
 		this.configuration = configuration;
-		this.jwkSetProvider = jwkSetProvider;
+		this.jwkSetSupplier = jwkSetSupplier;
 		this.authorizationCodes = authorizationCodes;
 	}
 
@@ -133,7 +135,7 @@ public class TokenEndpoint {
 				Audience.create(authenticationRequest.getClientID().getValue()),
 				Date.from(now.plus(this.configuration.idTokenLifetime())), Date.from(now));
 		JWTAssertionDetails details = JWTAssertionDetails.parse(idTokenClaimsSet.toJWTClaimsSet());
-		RSAKey rsaKey = (RSAKey) this.jwkSetProvider.getJwkSet().getKeys().get(0);
+		RSAKey rsaKey = (RSAKey) this.jwkSetSupplier.get().getKeys().get(0);
 		return JWTAssertionFactory.create(details, JWSAlgorithm.RS256, rsaKey.toRSAPrivateKey(), rsaKey.getKeyID(),
 				null);
 	}
@@ -149,7 +151,7 @@ public class TokenEndpoint {
 				Audience.create(this.configuration.getIssuer().getValue()),
 				Date.from(now.plus(this.configuration.accessTokenLifetime())), Date.from(now), Date.from(now),
 				new JWTID(), userInfo.toJSONObject());
-		RSAKey rsaKey = (RSAKey) this.jwkSetProvider.getJwkSet().getKeys().get(0);
+		RSAKey rsaKey = (RSAKey) this.jwkSetSupplier.get().getKeys().get(0);
 		SignedJWT accessToken = JWTAssertionFactory.create(details, JWSAlgorithm.RS256, rsaKey.toRSAPrivateKey(),
 				rsaKey.getKeyID(), null);
 		return new BearerAccessToken(accessToken.serialize(), this.configuration.accessTokenLifetime().getSeconds(),
